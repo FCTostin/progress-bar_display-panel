@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factorio Blueprint Tool</title>
+<link rel="icon" href="https://i.ibb.co/Hp44999c/blueprint-book.png" type="image/png">
+<style>
+    @font-face {
+      font-family: "FactorioFont";
+      src: url("https://fonts.cdnfonts.com/s/19687/PressStart2P-Regular.woff") format("woff");
+    }
+    
+    :root {
+      --factorio-dark: #1a1a1a;    
+      --factorio-dark-alt: #242424;
+      --factorio-primary: #77b8ed;
+      --factorio-secondary: #ffcc00;
+      --factorio-accent: #0a0a0a;
+      --factorio-green: #4cc237;
+      --factorio-red: #e35959;
+      --factorio-gray: #888888;
+      --terminal-green: #4daf39;
+      --blueprint-blue: #888888;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: "FactorioFont", monospace;
+      background-color: var(--factorio-dark);
+      color: #e0e0e0;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.2) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      border-bottom: 3px solid var(--factorio-primary);
+      padding-bottom: 10px;
+    }
+    
+    .header h1 {
+      color: var(--factorio-primary);
+      text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.5);
+      font-size: 24px;
+      margin: 0;
+    }
+    
+    .header-logo {
+      display: flex;
+      align-items: center;
+    }
+    
+    .header-logo img {
+      margin-right: 15px;
+      width: 40px;
+      height: 40px;
+      image-rendering: pixelated;
+    }
+    
+    .blueprint-panel {
+      background-color: var(--factorio-dark-alt);
+      border: 2px solid var(--factorio-accent);
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .panel-title {
+      color: var(--factorio-primary);
+      font-size: 16px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .panel-title:before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background-color: var(--factorio-primary);
+      margin-right: 8px;
+    }
+    
+    textarea, input, select {
+      width: 100%;
+      background-color: #0a0a0a;
+      color: var(--blueprint-blue);
+      border: 1px solid #444;
+      padding: 10px;
+      font-family: monospace;
+      margin-bottom: 10px;
+      resize: vertical;
+      border-radius: 2px;
+    }
+
+    input[type="color"] {
+        padding: 0;
+        height: 40px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    select {
+        font-family: "FactorioFont", monospace;
+        font-size: 12px;
+    }
+    
+    textarea {
+      min-height: 120px;
+    }
+    
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: var(--factorio-primary);
+      box-shadow: 0 0 0 2px rgba(255, 151, 0, 0.3);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    button {
+      background-color: var(--factorio-dark-alt);
+      color: var(--factorio-primary);
+      border: 2px solid var(--factorio-primary);
+      padding: 6px 12px;
+      font-family: "FactorioFont", monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      border-radius: 2px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    button:hover {
+      background-color: var(--factorio-primary);
+      color: #000;
+    }
+    
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .button-primary {
+      background-color: var(--factorio-primary);
+      color: #000;
+    }
+    
+    .search-container {
+      display: flex;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+    
+    .search-input {
+      flex-grow: 1;
+      margin-bottom: 0;
+    }
+    
+    .json-container {
+      position: relative;
+    }
+    
+    .line-numbers {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 2px;
+      width: 40px;
+      background: var(--factorio-dark);
+      overflow: hidden;
+      padding: 12px 5px 5px 0;
+      text-align: right;
+      color: var(--factorio-gray);
+      font-size: 12px;
+      user-select: none;
+      border-right: 1px solid var(--factorio-border);
+      line-height: 1.5;
+      box-sizing: border-box;
+    }
+    
+    #jsonDisplay, #jsonEditor {
+      transition: height 0.3s ease-in-out;
+    }
+
+    #jsonDisplay {
+      background-color: #0a0a0a;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      padding: 8px 8px 8px 45px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: none;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+      overflow-y: auto;
+      cursor: pointer;
+      line-height: 1.5;
+      border-radius: 2px;
+      margin-bottom: 0;
+    }
+    
+    #jsonDisplay.editing {
+      display: none;
+    }
+    
+    #jsonEditor {
+      display: none;
+      padding-left: 45px;
+      line-height: 1.5;
+      font-family: monospace;
+      font-size: 12px;
+      width: 100%;
+      resize: vertical;
+      tab-size: 2;
+      border-radius: 2px;
+    }
+    
+    #jsonEditor.editing {
+      display: block;
+    }
+    
+    /* JSON syntax highlighting */
+    .json-key { color: var(--factorio-primary); }
+    .json-string { color: var(--terminal-green); }
+    .json-number { color: #888888; }
+    .json-boolean { color: var(--factorio-secondary); }
+    .json-null { color: var(--factorio-red); }
+    .json-bracket { color: #e0e0e0; }
+    
+    .highlight-match {
+      background-color: rgba(255, 151, 0, 0.3);
+      color: white !important;
+    }
+    
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      border-top: 2px solid var(--factorio-primary);
+      padding-top: 20px;
+      font-size: 10px;
+      color: #888888;
+    }
+    
+    .footer a { color: #e0e0e0; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; color: var(--factorio-primary); }
+    .footer-links { display: flex; flex-direction: column; gap: 5px; }
+    .footer-links p { margin: 0; }
+    
+    .factorio-tooltip { position: relative; display: inline-block; }
+    .factorio-tooltip .tooltip-text {
+      visibility: hidden;
+      width: 120px;
+      background-color: var(--factorio-dark-alt);
+      color: var(--factorio-primary);
+      text-align: center;
+      border: 1px solid var(--factorio-primary);
+      padding: 5px;
+      border-radius: 2px;
+      position: left;
+      z-index: 1;
+      bottom: 125%;
+      left: 100%;
+      margin-left: -90px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 10px;
+    }
+    .factorio-tooltip:hover .tooltip-text { visibility: visible; opacity: 1; }
+    
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--factorio-primary); }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-logo">
+	   <img src="https://i.ibb.co/Hp44999c/blueprint-book.png" style="width: 30px; height: 30px;" />
+        <h1>PROGRESS BAR DISPLAY PANEL</h1>
+      </div>
+      <div>
+        <span class="factorio-tooltip">
+          V4.0
+          <span class="tooltip-text">FCT-team edition</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="blueprint-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">
+            <span class="icon icon-blueprint"></span>
+            Выберите предмет
+          </h3>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div id="item-preview" style="width: 50px; height: 50px; padding: 1px; border: 1px solid #444; background-color: #0a0a0a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <img id="selected-item-icon" src="" alt="Иконка" style="width: 40px; height: 40px; image-rendering: pixelated; -ms-interpolation-mode: nearest-neighbor;">
+            </div>
+            <div style="flex-grow: 1;">
+                <select id="itemSelector"></select>
+            </div>
+        </div>
+      </div>
+
+    <div class="blueprint-panel">
+        <div class="panel-header">
+            <h3 class="panel-title">Градиент</h3>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div style="text-align: center;">
+                <label for="startColor">Начальный</label>
+                <input type="color" id="startColor" value="#77b8ed">
+            </div>
+            <div style="flex-grow: 1;">
+                 <div id="gradient-preview" style="height: 30px; border: 1px solid #444; border-radius: 4px;"></div>
+            </div>
+            <div style="text-align: center;">
+                <label for="endColor">Конечный</label>
+                <input type="color" id="endColor" value="#36af29">
+            </div>
+        </div>
+    </div>
+    
+    <div class="blueprint-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">
+          <span class="icon icon-edit"></span>
+          JSON редактор
+        </h3>
+      </div>
+      <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск в JSON...">
+        <button id="searchBtn" onclick="searchInJson()">
+          <span class="icon icon-search"></span>Найти
+        </button>
+        <button id="nextBtn" onclick="findNextMatch()">Следующий</button>
+        <button id="prevBtn" onclick="findPrevMatch()">Предыдущий</button>
+      </div>
+      
+      <div class="json-container">
+        <div class="line-numbers" id="lineNumbers"></div>
+        <div id="jsonDisplay"></div>
+        <textarea id="jsonEditor"></textarea>
+      </div>
+      <div class="button-group">
+          <button onclick="encodeJson()" class="button-primary">
+            <span class="icon icon-export"></span>Encode
+          </button>
+          <button id="toggle-json-editor-size" onclick="toggleJsonEditorSize()">Развернуть</button>
+      </div>
+    </div>
+    
+    <div class="blueprint-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">
+          <span class="icon icon-blueprint"></span>
+          Encoded Blueprint
+        </h3>
+      </div>
+      <textarea id="encodedOutput" readonly></textarea>
+      <div class="button-group" style="margin-top: -5px;">
+        <button onclick="copyEncodedBlueprint()">Скопировать</button>
+      </div>
+    </div>
+    
+    <div class="pixel-line"></div>
+    
+    <div class="footer">
+      <div class="footer-links">
+	    <p>🐞 <a href="https://www.youtube.com/@FCT-Ostin" target="_blank">YouTube</a></p>
+		<p>💙 <a href="https://t.me/FCTostin" target="_blank">Telegram</a></p>
+        <p>🎮 <a href="https://steamcommunity.com/groups/FCTgroup" target="_blank">Steam Group</a></p>
+        <p>🕹 <a href="https://www.patreon.com/c/OstinFCT" target="_blank">Patreon</a></p>
+        <p>🪐 <a href="https://boosty.to/ostinfct" target="_blank">Boosty</a></p>
+      </div>
+      <div class="footer-links">
+        <p>Руководство Steam: <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=3561307760" target="_blank">Чертеж дисплея с прогресс-баром</a></p>
+        <p>Создано при поддержке Телеграм сообщества FCTostin</p>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script>
+  let isEditorMode = false;
+  let currentMatches = [];
+  let currentMatchIndex = -1;
+  let isJsonEditorExpanded = false;
+
+  const baseBlueprintJson = { "blueprint": { "description": "[item-group=other]Руководство по теме: https://steamcommunity.com/sharedfiles/filedetails/?id=3561307760\n[img=warning-white] Factorio-Username: [color=#72b4d1][font=default-bold]OstinFCT[/font][/color]\n[virtual-signal=signal-dot]YouTube: www.youtube.com/@FCT-Ostin\n[virtual-signal=signal-dot]Telegram: https://t.me/FCTostin\n[virtual-signal=signal-dot]Patreon: patreon.com/user?u=105745699\n[virtual-signal=signal-dot]Boosty: boosty.to/ostinfct", "icons": [ { "signal": { "name": "display-panel" }, "index": 1 }, { "signal": { "type": "virtual", "name": "signal-info" }, "index": 2 } ], "entities": [ { "entity_number": 1, "name": "display-panel", "position": { "x": -531.5, "y": 926.5 }, "direction": 8, "control_behavior": { "parameters": [ { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 0, "comparator": "=" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][color=119,184,237][item=energy-shield-equipment] ░░░░░░░░░░░░░░░░░░░░ [/color] 0%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 1, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[item=energy-shield-equipment] [font=default][color=119,184,235]▎░░░░░░░░░░░░░░░░░░░ [/color] 1%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 2, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][color=118,184,233][item=energy-shield-equipment] ▌░░░░░░░░░░░░░░░░░░░ [/color] 2%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 3, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment] [color=118,184,232]▋░░░░░░░░░░░░░░░░░░░ [/color] 3%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 4, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[item=energy-shield-equipment] [font=default][color=117,184,230]▊░░░░░░░░░░░░░░░░░░░ [/color] 4%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 5, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[item=energy-shield-equipment] [font=default][color=117,184,228]█░░░░░░░░░░░░░░░░░░░ [/color] 5%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 6, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[item=energy-shield-equipment] [font=default][color=116,183,226]█▎░░░░░░░░░░░░░░░░░░ [/color] 6%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 7, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[item=energy-shield-equipment] [font=default][color=116,183,224]█▌░░░░░░░░░░░░░░░░░░ [/color] 7%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 8, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[item=energy-shield-equipment] [font=default][color=116,183,223]█▋░░░░░░░░░░░░░░░░░░ [/color] 8%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 9, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment] [color=115,183,221]█▊░░░░░░░░░░░░░░░░░░ [/color] 9%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 10, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=115,183,219] ██░░░░░░░░░░░░░░░░░░ [/color] 10%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 11, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=114,183,217] ██▎░░░░░░░░░░░░░░░░░ [/color] 11%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 12, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=114,183,215] ██▌░░░░░░░░░░░░░░░░░ [/color] 12%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 13, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=114,183,214] ██▋░░░░░░░░░░░░░░░░░ [/color] 13%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 14, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=113,183,212] ██▊░░░░░░░░░░░░░░░░░ [/color] 14%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 15, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=113,183,210] ███░░░░░░░░░░░░░░░░░ [/color] 15%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 16, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=112,183,208] ███▎░░░░░░░░░░░░░░░░ [/color] 16%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 17, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=112,182,206] ███▌░░░░░░░░░░░░░░░░ [/color] 17%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 18, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=111,182,205] ███▋░░░░░░░░░░░░░░░░ [/color] 18%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 19, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=111,182,203] ███▊░░░░░░░░░░░░░░░░ [/color] 19%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 20, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=111,182,201] ████░░░░░░░░░░░░░░░░ [/color] 20%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 21, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=110,182,199] ████▎░░░░░░░░░░░░░░░ [/color] 21%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 22, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=110,182,197] ████▌░░░░░░░░░░░░░░░ [/color] 22%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 23, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=109,182,196] ████▋░░░░░░░░░░░░░░░ [/color] 23%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 24, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=109,182,194] ████▊░░░░░░░░░░░░░░░ [/color] 24%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 25, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment] [color=109,182,192]█████░░░░░░░░░░░░░░░ [/color] 25%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 26, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=108,182,190] █████▎░░░░░░░░░░░░░░ [/color] 26%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 27, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=108,182,188] █████▌░░░░░░░░░░░░░░ [/color] 27%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 28, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=107,181,187] █████▋░░░░░░░░░░░░░░ [/color] 28%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 29, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=107,181,185] █████▊░░░░░░░░░░░░░░ [/color] 29%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 30, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=106,181,183] ██████░░░░░░░░░░░░░░ [/color] 30%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 31, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=106,181,181] ██████▎░░░░░░░░░░░░░ [/color] 31%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 32, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=106,181,179] ██████▌░░░░░░░░░░░░░ [/color] 32%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 33, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=105,181,178] ██████▋░░░░░░░░░░░░░ [/color] 33%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 34, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=105,181,176] ██████▊░░░░░░░░░░░░░ [/color] 34%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 35, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][color=104,181,174][item=energy-shield-equipment] ███████░░░░░░░░░░░░░ [/color] 35%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 36, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=104,181,172] ███████▎░░░░░░░░░░░░ [/color] 36%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 37, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=103,181,170] ███████▌░░░░░░░░░░░░ [/color] 37%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 38, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=103,181,169] ███████▋░░░░░░░░░░░░ [/color] 38%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 39, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=103,180,167] ███████▊░░░░░░░░░░░░ [/color] 39%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 40, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=102,180,165] ████████░░░░░░░░░░░░ [/color] 40%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 41, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=102,180,163] ████████▎░░░░░░░░░░░ [/color] 41%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 42, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=101,180,161] ████████▌░░░░░░░░░░░ [/color] 42%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 43, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=101,180,160] ████████▋░░░░░░░░░░░ [/color] 43%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 44, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=101,180,158] ████████▊░░░░░░░░░░░ [/color] 44%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 45, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=100,180,156] █████████░░░░░░░░░░░ [/color] 45%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 46, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=100,180,154] █████████▎░░░░░░░░░░ [/color] 46%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 47, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment] [color=99,180,152]█████████▌░░░░░░░░░░ [/color] 47%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 48, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=99,180,151] █████████▋░░░░░░░░░░ [/color] 48%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 49, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=98,180,149] ██████████░░░░░░░░░░ [/color] 49%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 50, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=98,180,147] ██████████░░░░░░░░░░ [/color] 50%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 51, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=98,179,145] ██████████▎░░░░░░░░░ [/color] 51%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 52, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=97,179,143] ██████████▌░░░░░░░░░ [/color] 52%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 53, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=97,179,142] ██████████▋░░░░░░░░░ [/color] 53%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 54, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=96,179,140] ██████████▊░░░░░░░░░ [/color] 54%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 55, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=96,179,138] ███████████░░░░░░░░░ [/color] 55%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 56, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=95,179,136] ███████████▎░░░░░░░░ [/color] 56%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 57, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=95,179,134] ███████████▌░░░░░░░░ [/color] 57%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 58, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=95,179,133] ███████████▋░░░░░░░░ [/color] 58%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 59, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=94,179,131] ███████████▊░░░░░░░░ [/color] 59%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 60, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=94,179,129] ████████████░░░░░░░░ [/color] 60%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 61, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=93,179,127] ████████████▎░░░░░░░ [/color] 61%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 62, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=93,178,125] ████████████▌░░░░░░░ [/color] 62%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 63, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=93,178,124] ████████████▋░░░░░░░ [/color] 63%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 64, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=92,178,122] ████████████▊░░░░░░░ [/color] 64%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 65, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=92,178,120] █████████████░░░░░░░ [/color] 65%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 66, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=91,178,118] █████████████▎░░░░░░ [/color] 66%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 67, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment] [color=91,178,116]█████████████▌░░░░░░ [/color] 67%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 68, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=90,178,115] █████████████▋░░░░░░ [/color] 68%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 69, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=90,178,113] █████████████▊░░░░░░ [/color] 69%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 70, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=90,178,111] ██████████████░░░░░░ [/color] 70%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 71, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=89,178,109] ██████████████▎░░░░░ [/color] 71%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 72, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=89,178,107] ██████████████▌░░░░░ [/color] 72%[/font]\n" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 73, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=88,177,106] ██████████████▋░░░░░ [/color] 73%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 74, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=88,177,104] ██████████████▊░░░░░ [/color] 74%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 76, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=87,177,100] ███████████████▎░░░░ [/color] 76%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 77, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=87,177,98] ███████████████▌░░░░ [/color] 77%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 78, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=86,177,97] ███████████████▋░░░░ [/color] 78%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 79, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=86,177,95] ███████████████▊░░░░ [/color] 79%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 80, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=85,177,93] ████████████████░░░░ [/color] 80%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 81, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=85,177,91] ████████████████▎░░░ [/color] 81%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 82, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=85,177,89] ████████████████▌░░░ [/color] 82%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 83, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=84,177,88] ████████████████▋░░░ [/color] 83%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 84, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=84,176,86] ████████████████▊░░░ [/color] 84%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 85, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=83,176,84] █████████████████░░░ [/color] 85%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 86, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=83,176,82] █████████████████▎░░ [/color] 86%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 87, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=82,176,80] █████████████████▌░░ [/color] 87%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 88, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=82,176,79] █████████████████▋░░ [/color] 88%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 89, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=82,176,77] █████████████████▊░░ [/color] 89%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 90, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=81,176,75] ██████████████████░░ [/color] 90%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 91, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=81,176,73] ██████████████████▎░ [/color] 91%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 92, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=80,176,71] ██████████████████▌░ [/color] 92%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 93, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=80,176,70] ██████████████████▋░ [/color] 93%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 94, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=80,176,68] ██████████████████▊░ [/color] 94%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 95, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=79,175,66] ███████████████████░ [/color] 95%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 96, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=79,175,64] ███████████████████▎ [/color] 96%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 97, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=78,175,62] ███████████████████▌ [/color] 97%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 98, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=78,175,61] ███████████████████▋ [/color] 98%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 99, "comparator": "≤" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=77,175,59] ███████████████████▊ [/color] 99%[/font]" }, { "condition": { "first_signal": { "name": "energy-shield-equipment" }, "constant": 100, "comparator": "≥" }, "icon": { "name": "energy-shield-equipment" }, "text": "[font=default][item=energy-shield-equipment][color=77,175,57] ████████████████████ [/color] 100%[/font]" } ] }, "always_show": true, "show_in_chart": true }, { "entity_number": 2, "name": "arithmetic-combinator", "position": { "x": -531.5, "y": 928 }, "control_behavior": { "arithmetic_conditions": { "first_signal": { "type": "virtual", "name": "signal-each" }, "second_constant": 250, "operation": "/", "output_signal": { "type": "virtual", "name": "signal-each" } } }, "player_description": "[virtual-signal=signal-dot]YouTube: www.youtube.com/@FCT-Ostin\n[virtual-signal=signal-dot]Telegram: https://t.me/FCTostin\n[virtual-signal=signal-dot]Patreon: patreon.com/user?u=105745699\n[virtual-signal=signal-dot]Boosty: boosty.to/ostinfct" } ], "wires": [ [ 1, 2, 2, 4 ] ], "tiles": [ { "position": { "x": -532, "y": 926 }, "name": "landfill" }, { "position": { "x": -532, "y": 927 }, "name": "landfill" }, { "position": { "x": -532, "y": 928 }, "name": "landfill" } ], "item": "blueprint", "label": "Progress bar Display panel | [tooltip= youtube.com/@FCT-Ostin] [color=#243f6d][font=default-semibold]By OstinFCT[/font][/color]", "version": 562949957353472 } }
+  const items = [{icon:"https://wiki.factorio.com/images/thumb/Wooden_chest.png/32px-Wooden_chest.png",product:"wooden-chest"},{icon:"https://wiki.factorio.com/images/thumb/Iron_chest.png/32px-Iron_chest.png",product:"iron-chest"},{icon:"https://wiki.factorio.com/images/thumb/Steel_chest.png/32px-Steel_chest.png",product:"steel-chest"},{icon:"https://wiki.factorio.com/images/thumb/Storage_tank.png/32px-Storage_tank.png",product:"storage-tank"},{icon:"https://wiki.factorio.com/images/thumb/Transport_belt.png/32px-Transport_belt.png",product:"transport-belt"},{icon:"https://wiki.factorio.com/images/thumb/Fast_transport_belt.png/32px-Fast_transport_belt.png",product:"fast-transport-belt"},{icon:"https://wiki.factorio.com/images/thumb/Express_transport_belt.png/32px-Express_transport_belt.png",product:"express-transport-belt"},{icon:"https://wiki.factorio.com/images/thumb/Turbo_transport_belt.png/32px-Turbo_transport_belt.png",product:"turbo-transport-belt"},{icon:"https://wiki.factorio.com/images/thumb/Underground_belt.png/32px-Underground_belt.png",product:"underground-belt"},{icon:"https://wiki.factorio.com/images/thumb/Fast_underground_belt.png/32px-Fast_underground_belt.png",product:"fast-underground-belt"},{icon:"https://wiki.factorio.com/images/thumb/Express_underground_belt.png/32px-Express_underground_belt.png",product:"express-underground-belt"},{icon:"https://wiki.factorio.com/images/thumb/Turbo_underground_belt.png/32px-Turbo_underground_belt.png",product:"turbo-underground-belt"},{icon:"https://wiki.factorio.com/images/thumb/Splitter.png/32px-Splitter.png",product:"splitter"},{icon:"https://wiki.factorio.com/images/thumb/Fast_splitter.png/32px-Fast_splitter.png",product:"fast-splitter"},{icon:"https://wiki.factorio.com/images/thumb/Express_splitter.png/32px-Express_splitter.png",product:"express-splitter"},{icon:"https://wiki.factorio.com/images/thumb/Turbo_splitter.png/32px-Turbo_splitter.png",product:"turbo-splitter"},{icon:"https://wiki.factorio.com/images/thumb/Burner_inserter.png/32px-Burner_inserter.png",product:"burner-inserter"},{icon:"https://wiki.factorio.com/images/thumb/Inserter.png/32px-Inserter.png",product:"inserter"},{icon:"https://wiki.factorio.com/images/thumb/Long-handed_inserter.png/32px-Long-handed_inserter.png",product:"long-handed-inserter"},{icon:"https://wiki.factorio.com/images/thumb/Fast_inserter.png/32px-Fast_inserter.png",product:"fast-inserter"},{icon:"https://wiki.factorio.com/images/thumb/Bulk_inserter.png/32px-Bulk_inserter.png",product:"bulk-inserter"},{icon:"https://wiki.factorio.com/images/thumb/Stack_inserter.png/32px-Stack_inserter.png",product:"stack-inserter"},{icon:"https://wiki.factorio.com/images/thumb/Small_electric_pole.png/32px-Small_electric_pole.png",product:"small-electric-pole"},{icon:"https://wiki.factorio.com/images/thumb/Medium_electric_pole.png/32px-Medium_electric_pole.png",product:"medium-electric-pole"},{icon:"https://wiki.factorio.com/images/thumb/Big_electric_pole.png/32px-Big_electric_pole.png",product:"big-electric-pole"},{icon:"https://wiki.factorio.com/images/thumb/Substation.png/32px-Substation.png",product:"substation"},{icon:"https://wiki.factorio.com/images/thumb/Pipe.png/32px-Pipe.png",product:"pipe"},{icon:"https://wiki.factorio.com/images/thumb/Pipe_to_ground.png/32px-Pipe_to_ground.png",product:"pipe-to-ground"},{icon:"https://wiki.factorio.com/images/thumb/Pump.png/32px-Pump.png",product:"pump"},{icon:"https://wiki.factorio.com/images/thumb/Straight_rail.png/32px-Straight_rail.png",product:"rail"},{icon:"https://wiki.factorio.com/images/thumb/Rail_ramp.png/32px-Rail_ramp.png",product:"rail-ramp"},{icon:"https://wiki.factorio.com/images/thumb/Rail_support.png/32px-Rail_support.png",product:"rail-support"},{icon:"https://wiki.factorio.com/images/thumb/Train_stop.png/32px-Train_stop.png",product:"train-stop"},{icon:"https://wiki.factorio.com/images/thumb/Rail_signal.png/32px-Rail_signal.png",product:"rail-signal"},{icon:"https://wiki.factorio.com/images/thumb/Rail_chain_signal.png/32px-Rail_chain_signal.png",product:"rail-chain-signal"},{icon:"https://wiki.factorio.com/images/thumb/Locomotive.png/32px-Locomotive.png",product:"locomotive"},{icon:"https://wiki.factorio.com/images/thumb/Cargo_wagon.png/32px-Cargo_wagon.png",product:"cargo-wagon"},{icon:"https://wiki.factorio.com/images/thumb/Fluid_wagon.png/32px-Fluid_wagon.png",product:"fluid-wagon"},{icon:"https://wiki.factorio.com/images/thumb/Artillery_wagon.png/32px-Artillery_wagon.png",product:"artillery-wagon"},{icon:"https://wiki.factorio.com/images/thumb/Car.png/32px-Car.png",product:"car"},{icon:"https://wiki.factorio.com/images/thumb/Tank.png/32px-Tank.png",product:"tank"},{icon:"https://wiki.factorio.com/images/thumb/Spidertron.png/32px-Spidertron.png",product:"spidertron"},{icon:"https://wiki.factorio.com/images/thumb/Logistic_robot.png/32px-Logistic_robot.png",product:"logistic-robot"},{icon:"https://wiki.factorio.com/images/thumb/Construction_robot.png/32px-Construction_robot.png",product:"construction-robot"},{icon:"https://wiki.factorio.com/images/thumb/Active_provider_chest.png/32px-Active_provider_chest.png",product:"active-provider-chest"},{icon:"https://wiki.factorio.com/images/thumb/Passive_provider_chest.png/32px-Passive_provider_chest.png",product:"passive-provider-chest"},{icon:"https://wiki.factorio.com/images/thumb/Storage_chest.png/32px-Storage_chest.png",product:"storage-chest"},{icon:"https://wiki.factorio.com/images/thumb/Buffer_chest.png/32px-Buffer_chest.png",product:"buffer-chest"},{icon:"https://wiki.factorio.com/images/thumb/Requester_chest.png/32px-Requester_chest.png",product:"requester-chest"},{icon:"https://wiki.factorio.com/images/thumb/Roboport.png/32px-Roboport.png",product:"roboport"},{icon:"https://wiki.factorio.com/images/thumb/Lamp.png/32px-Lamp.png",product:"small-lamp"},{icon:"https://wiki.factorio.com/images/thumb/Arithmetic_combinator.png/32px-Arithmetic_combinator.png",product:"arithmetic-combinator"},{icon:"https://wiki.factorio.com/images/thumb/Decider_combinator.png/32px-Decider_combinator.png",product:"decider-combinator"},{icon:"https://wiki.factorio.com/images/thumb/Selector_combinator.png/32px-Selector_combinator.png",product:"selector-combinator"},{icon:"https://wiki.factorio.com/images/thumb/Constant_combinator.png/32px-Constant_combinator.png",product:"constant-combinator"},{icon:"https://wiki.factorio.com/images/thumb/Power_switch.png/32px-Power_switch.png",product:"power-switch"},{icon:"https://wiki.factorio.com/images/thumb/Programmable_speaker.png/32px-Programmable_speaker.png",product:"programmable-speaker"},{icon:"https://wiki.factorio.com/images/thumb/Display_panel.png/32px-Display_panel.png",product:"display-panel"},{icon:"https://wiki.factorio.com/images/thumb/Stone_brick.png/32px-Stone_brick.png",product:"stone-brick"},{icon:"https://wiki.factorio.com/images/thumb/Concrete.png/32px-Concrete.png",product:"concrete"},{icon:"https://wiki.factorio.com/images/thumb/Refined_concrete.png/32px-Refined_concrete.png",product:"refined-concrete"},{icon:"https://wiki.factorio.com/images/thumb/Hazard_concrete.png/32px-Hazard_concrete.png",product:"hazard-concrete"},{icon:"https://wiki.factorio.com/images/thumb/Refined_hazard_concrete.png/32px-Refined_hazard_concrete.png",product:"refined-hazard-concrete"},{icon:"https://wiki.factorio.com/images/thumb/Landfill.png/32px-Landfill.png",product:"landfill"},{icon:"https://wiki.factorio.com/images/thumb/Artificial_yumako_soil.png/32px-Artificial_yumako_soil.png",product:"artificial-yumako-soil"},{icon:"https://wiki.factorio.com/images/thumb/Overgrowth_yumako_soil.png/32px-Overgrowth_yumako_soil.png",product:"overgrowth-yumako-soil"},{icon:"https://wiki.factorio.com/images/thumb/Artificial_jellynut_soil.png/32px-Artificial_jellynut_soil.png",product:"artificial-jellynut-soil"},{icon:"https://wiki.factorio.com/images/thumb/Overgrowth_jellynut_soil.png/32px-Overgrowth_jellynut_soil.png",product:"overgrowth-jellynut-soil"},{icon:"https://wiki.factorio.com/images/thumb/Ice_platform.png/32px-Ice_platform.png",product:"ice-platform"},{icon:"https://wiki.factorio.com/images/thumb/Foundation.png/32px-Foundation.png",product:"foundation"},{icon:"https://wiki.factorio.com/images/thumb/Cliff_explosives.png/32px-Cliff_explosives.png",product:"cliff-explosives"},{icon:"https://wiki.factorio.com/images/thumb/Repair_pack.png/32px-Repair_pack.png",product:"repair-pack"},{icon:"https://wiki.factorio.com/images/thumb/Boiler.png/32px-Boiler.png",product:"boiler"},{icon:"https://wiki.factorio.com/images/thumb/Steam_engine.png/32px-Steam_engine.png",product:"steam-engine"},{icon:"https://wiki.factorio.com/images/thumb/Solar_panel.png/32px-Solar_panel.png",product:"solar-panel"},{icon:"https://wiki.factorio.com/images/thumb/Accumulator.png/32px-Accumulator.png",product:"accumulator"},{icon:"https://wiki.factorio.com/images/thumb/Nuclear_reactor.png/32px-Nuclear_reactor.png",product:"nuclear-reactor"},{icon:"https://wiki.factorio.com/images/thumb/Heat_pipe.png/32px-Heat_pipe.png",product:"heat-pipe"},{icon:"https://wiki.factorio.com/images/thumb/Heat_exchanger.png/32px-Heat_exchanger.png",product:"heat-exchanger"},{icon:"https://wiki.factorio.com/images/thumb/Steam_turbine.png/32px-Steam_turbine.png",product:"steam-turbine"},{icon:"https://wiki.factorio.com/images/thumb/Fusion_reactor.png/32px-Fusion_reactor.png",product:"fusion-reactor"},{icon:"https://wiki.factorio.com/images/thumb/Fusion_generator.png/32px-Fusion_generator.png",product:"fusion-generator"},{icon:"https://wiki.factorio.com/images/thumb/Burner_mining_drill.png/32px-Burner_mining_drill.png",product:"burner-mining-drill"},{icon:"https://wiki.factorio.com/images/thumb/Electric_mining_drill.png/32px-Electric_mining_drill.png",product:"electric-mining-drill"},{icon:"https://wiki.factorio.com/images/thumb/Big_mining_drill.png/32px-Big_mining_drill.png",product:"big-mining-drill"},{icon:"https://wiki.factorio.com/images/thumb/Offshore_pump.png/32px-Offshore_pump.png",product:"offshore-pump"},{icon:"https://wiki.factorio.com/images/thumb/Pumpjack.png/32px-Pumpjack.png",product:"pumpjack"},{icon:"https://wiki.factorio.com/images/thumb/Stone_furnace.png/32px-Stone_furnace.png",product:"stone-furnace"},{icon:"https://wiki.factorio.com/images/thumb/Steel_furnace.png/32px-Steel_furnace.png",product:"steel-furnace"},{icon:"https://wiki.factorio.com/images/thumb/Electric_furnace.png/32px-Electric_furnace.png",product:"electric-furnace"},{icon:"https://wiki.factorio.com/images/thumb/Foundry.png/32px-Foundry.png",product:"foundry"},{icon:"https://wiki.factorio.com/images/thumb/Recycler.png/32px-Recycler.png",product:"recycler"},{icon:"https://wiki.factorio.com/images/thumb/Agricultural_tower.png/32px-Agricultural_tower.png",product:"agricultural-tower"},{icon:"https://wiki.factorio.com/images/thumb/Biochamber.png/32px-Biochamber.png",product:"biochamber"},{icon:"https://wiki.factorio.com/images/thumb/Captive_biter_spawner.png/32px-Captive_biter_spawner.png",product:"captive-biter-spawner"},{icon:"https://wiki.factorio.com/images/thumb/Assembling_machine_1.png/32px-Assembling_machine_1.png",product:"assembling-machine-1"},{icon:"https://wiki.factorio.com/images/thumb/Assembling_machine_2.png/32px-Assembling_machine_2.png",product:"assembling-machine-2"},{icon:"https://wiki.factorio.com/images/thumb/Assembling_machine_3.png/32px-Assembling_machine_3.png",product:"assembling-machine-3"},{icon:"https://wiki.factorio.com/images/thumb/Oil_refinery.png/32px-Oil_refinery.png",product:"oil-refinery"},{icon:"https://wiki.factorio.com/images/thumb/Chemical_plant.png/32px-Chemical_plant.png",product:"chemical-plant"},{icon:"https://wiki.factorio.com/images/thumb/Centrifuge.png/32px-Centrifuge.png",product:"centrifuge"},{icon:"https://wiki.factorio.com/images/thumb/Electromagnetic_plant.png/32px-Electromagnetic_plant.png",product:"electromagnetic-plant"},{icon:"https://wiki.factorio.com/images/thumb/Cryogenic_plant.png/32px-Cryogenic_plant.png",product:"cryogenic-plant"},{icon:"https://wiki.factorio.com/images/thumb/Lab.png/32px-Lab.png",product:"lab"},{icon:"https://wiki.factorio.com/images/thumb/Biolab.png/32px-Biolab.png",product:"biolab"},{icon:"https://wiki.factorio.com/images/thumb/Lightning_rod.png/32px-Lightning_rod.png",product:"lightning-rod"},{icon:"https://wiki.factorio.com/images/thumb/Lightning_collector.png/32px-Lightning_collector.png",product:"lightning-collector"},{icon:"https://wiki.factorio.com/images/thumb/Heating_tower.png/32px-Heating_tower.png",product:"heating-tower"},{icon:"https://wiki.factorio.com/images/thumb/Beacon.png/32px-Beacon.png",product:"beacon"},{icon:"https://wiki.factorio.com/images/thumb/Speed_module.png/32px-Speed_module.png",product:"speed-module"},{icon:"https://wiki.factorio.com/images/thumb/Speed_module_2.png/32px-Speed_module_2.png",product:"speed-module-2"},{icon:"https://wiki.factorio.com/images/thumb/Speed_module_3.png/32px-Speed_module_3.png",product:"speed-module-3"},{icon:"https://wiki.factorio.com/images/thumb/Productivity_module.png/32px-Productivity_module.png",product:"productivity-module"},{icon:"https://wiki.factorio.com/images/thumb/Productivity_module_2.png/32px-Productivity_module_2.png",product:"productivity-module-2"},{icon:"https://wiki.factorio.com/images/thumb/Productivity_module_3.png/32px-Productivity_module_3.png",product:"productivity-module-3"},{icon:"https://wiki.factorio.com/images/thumb/Efficiency_module.png/32px-Efficiency_module.png",product:"efficiency-module"},{icon:"https://wiki.factorio.com/images/thumb/Efficiency_module_2.png/32px-Efficiency_module_2.png",product:"efficiency-module-2"},{icon:"https://wiki.factorio.com/images/thumb/Efficiency_module_3.png/32px-Efficiency_module_3.png",product:"efficiency-module-3"},{icon:"https://wiki.factorio.com/images/thumb/Quality_module.png/32px-Quality_module.png",product:"quality-module"},{icon:"https://wiki.factorio.com/images/thumb/Quality_module_2.png/32px-Quality_module_2.png",product:"quality-module-2"},{icon:"https://wiki.factorio.com/images/thumb/Quality_module_3.png/32px-Quality_module_3.png",product:"quality-module-3"},{icon:"https://wiki.factorio.com/images/thumb/Ice.png/32px-Ice.png",product:"ice"},{icon:"https://wiki.factorio.com/images/thumb/Copper_plate.png/32px-Copper_plate.png",product:"copper-plate"},{icon:"https://wiki.factorio.com/images/thumb/Iron_plate.png/32px-Iron_plate.png",product:"iron-plate"},{icon:"https://wiki.factorio.com/images/thumb/Steel_plate.png/32px-Steel_plate.png",product:"steel-plate"},{icon:"https://wiki.factorio.com/images/thumb/Solid_fuel.png/32px-Solid_fuel.png",product:"solid-fuel"},{icon:"https://wiki.factorio.com/images/thumb/Plastic_bar.png/32px-Plastic_bar.png",product:"plastic-bar"},{icon:"https://wiki.factorio.com/images/thumb/Sulfur.png/32px-Sulfur.png",product:"sulfur"},{icon:"https://wiki.factorio.com/images/thumb/Battery.png/32px-Battery.png",product:"battery"},{icon:"https://wiki.factorio.com/images/thumb/Explosives.png/32px-Explosives.png",product:"explosives"},{icon:"https://wiki.factorio.com/images/thumb/Carbon.png/32px-Carbon.png",product:"carbon"},{icon:"https://wiki.factorio.com/images/thumb/Iron_gear_wheel.png/32px-Iron_gear_wheel.png",product:"iron-gear-wheel"},{icon:"https://wiki.factorio.com/images/thumb/Copper_cable.png/32px-Copper_cable.png",product:"copper-cable"},{icon:"https://wiki.factorio.com/images/thumb/Iron_stick.png/32px-Iron_stick.png",product:"iron-stick"},{icon:"https://wiki.factorio.com/images/thumb/Barrel.png/32px-Barrel.png",product:"barrel"},{icon:"https://wiki.factorio.com/images/thumb/Electronic_circuit.png/32px-Electronic_circuit.png",product:"electronic-circuit"},{icon:"https://wiki.factorio.com/images/thumb/Advanced_circuit.png/32px-Advanced_circuit.png",product:"advanced-circuit"},{icon:"https://wiki.factorio.com/images/thumb/Processing_unit.png/32px-Processing_unit.png",product:"processing-unit"},{icon:"https://wiki.factorio.com/images/thumb/Engine_unit.png/32px-Engine_unit.png",product:"engine-unit"},{icon:"https://wiki.factorio.com/images/thumb/Electric_engine_unit.png/32px-Electric_engine_unit.png",product:"electric-engine-unit"},{icon:"https://wiki.factorio.com/images/thumb/Flying_robot_frame.png/32px-Flying_robot_frame.png",product:"flying-robot-frame"},{icon:"https://wiki.factorio.com/images/thumb/Low_density_structure.png/32px-Low_density_structure.png",product:"low-density-structure"},{icon:"https://wiki.factorio.com/images/thumb/Rocket_fuel.png/32px-Rocket_fuel.png",product:"rocket-fuel"},{icon:"https://wiki.factorio.com/images/thumb/Nuclear_fuel.png/32px-Nuclear_fuel.png",product:"nuclear-fuel"},{icon:"https://wiki.factorio.com/images/thumb/Uranium-238.png/32px-Uranium-238.png",product:"uranium-238"},{icon:"https://wiki.factorio.com/images/thumb/Uranium-235.png/32px-Uranium-235.png",product:"uranium-235"},{icon:"https://wiki.factorio.com/images/thumb/Depleted_uranium_fuel_cell.png/32px-Depleted_uranium_fuel_cell.png",product:"depleted-uranium-fuel-cell"},{icon:"https://wiki.factorio.com/images/thumb/Tungsten_carbide.png/32px-Tungsten_carbide.png",product:"tungsten-carbide"},{icon:"https://wiki.factorio.com/images/thumb/Tungsten_plate.png/32px-Tungsten_plate.png",product:"tungsten-plate"},{icon:"https://wiki.factorio.com/images/thumb/Holmium_plate.png/32px-Holmium_plate.png",product:"holmium-plate"},{icon:"https://wiki.factorio.com/images/thumb/Superconductor.png/32px-Superconductor.png",product:"superconductor"},{icon:"https://wiki.factorio.com/images/thumb/Supercapacitor.png/32px-Supercapacitor.png",product:"supercapacitor"},{icon:"https://wiki.factorio.com/images/thumb/Yumako_seed.png/32px-Yumako_seed.png",product:"yumako-seed"},{icon:"https://wiki.factorio.com/images/thumb/Jellynut_seed.png/32px-Jellynut_seed.png",product:"jellynut-seed"},{icon:"https://wiki.factorio.com/images/thumb/Tree_seed.png/32px-Tree_seed.png",product:"tree-seed"},{icon:"https://wiki.factorio.com/images/thumb/Spoilage.png/32px-Spoilage.png",product:"spoilage"},{icon:"https://wiki.factorio.com/images/thumb/Nutrients.png/32px-Nutrients.png",product:"nutrients"},{icon:"https://wiki.factorio.com/images/thumb/Bioflux.png/32px-Bioflux.png",product:"bioflux"},{icon:"https://wiki.factorio.com/images/thumb/Yumako_mash.png/32px-Yumako_mash.png",product:"yumako-mash"},{icon:"https://wiki.factorio.com/images/thumb/Jelly.png/32px-Jelly.png",product:"jelly"},{icon:"https://wiki.factorio.com/images/thumb/Carbon_fiber.png/32px-Carbon_fiber.png",product:"carbon-fiber"},{icon:"https://wiki.factorio.com/images/thumb/Water_barrel.png/32px-Water_barrel.png",product:"water_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Crude_oil_barrel.png/32px-Crude_oil_barrel.png",product:"crude_oil_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Petroleum_gas_barrel.png/32px-Petroleum_gas_barrel.png",product:"petroleum_gas_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Light_oil_barrel.png/32px-Light_oil_barrel.png",product:"light_oil_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Heavy_oil_barrel.png/32px-Heavy_oil_barrel.png",product:"heavy_oil_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Lubricant_barrel.png/32px-Lubricant_barrel.png",product:"lubricant_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Sulfuric_acid_barrel.png/32px-Sulfuric_acid_barrel.png",product:"Sulfuric_acid_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Fluoroketone_%28hot%29_barrel.png/32px-Fluoroketone_%28hot%29_barrel.png",product:"fluoroketone_hot_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Fluoroketone_%28cold%29_barrel.png/32px-Fluoroketone_%28cold%29_barrel.png",product:"fluoroketone_cold_barrel"},{icon:"https://wiki.factorio.com/images/thumb/Biter_egg.png/32px-Biter_egg.png",product:"biter-egg"},{icon:"https://wiki.factorio.com/images/thumb/Pentapod_egg.png/32px-Pentapod_egg.png",product:"pentapod-egg"},{icon:"https://wiki.factorio.com/images/thumb/Lithium.png/32px-Lithium.png",product:"lithium"},{icon:"https://wiki.factorio.com/images/thumb/Lithium_plate.png/32px-Lithium_plate.png",product:"lithium-plate"},{icon:"https://wiki.factorio.com/images/thumb/Quantum_processor.png/32px-Quantum_processor.png",product:"quantum-processor"},{icon:"https://wiki.factorio.com/images/thumb/Fusion_power_cell.png/32px-Fusion_power_cell.png",product:"fusion-power-cell"},{icon:"https://wiki.factorio.com/images/thumb/Automation_science_pack.png/32px-Automation_science_pack.png",product:"automation-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Logistic_science_pack.png/32px-Logistic_science_pack.png",product:"logistic-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Military_science_pack.png/32px-Military_science_pack.png",product:"military-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Chemical_science_pack.png/32px-Chemical_science_pack.png",product:"chemical-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Production_science_pack.png/32px-Production_science_pack.png",product:"production-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Utility_science_pack.png/32px-Utility_science_pack.png",product:"utility-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Space_science_pack.png/32px-Space_science_pack.png",product:"space-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Metallurgic_science_pack.png/32px-Metallurgic_science_pack.png",product:"metallurgic-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Agricultural_science_pack.png/32px-Agricultural_science_pack.png",product:"agricultural-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Electromagnetic_science_pack.png/32px-Electromagnetic_science_pack.png",product:"electromagnetic-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Cryogenic_science_pack.png/32px-Cryogenic_science_pack.png",product:"cryogenic-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Promethium_science_pack.png/32px-Promethium_science_pack.png",product:"promethium-science-pack"},{icon:"https://wiki.factorio.com/images/thumb/Rocket_silo.png/32px-Rocket_silo.png",product:"rocket-silo"},{icon:"https://wiki.factorio.com/images/thumb/Cargo_landing_pad.png/32px-Cargo_landing_pad.png",product:"cargo-landing-pad"},{icon:"https://wiki.factorio.com/images/thumb/Space_platform_foundation.png/32px-Space_platform_foundation.png",product:"space-platform-foundation"},{icon:"https://wiki.factorio.com/images/thumb/Cargo_bay.png/32px-Cargo_bay.png",product:"cargo-bay"},{icon:"https://wiki.factorio.com/images/thumb/Asteroid_collector.png/32px-Asteroid_collector.png",product:"asteroid-collector"},{icon:"https://wiki.factorio.com/images/thumb/Crusher.png/32px-Crusher.png",product:"crusher"},{icon:"https://wiki.factorio.com/images/thumb/Thruster.png/32px-Thruster.png",product:"thruster"},{icon:"https://wiki.factorio.com/images/thumb/Space_platform_hub.png/32px-Space_platform_hub.png",product:"space-platform-starter-pack"},{icon:"https://wiki.factorio.com/images/thumb/Satellite.png/32px-Satellite.png",product:"satellite"},{icon:"https://wiki.factorio.com/images/thumb/Metallic_asteroid_chunk.png/32px-Metallic_asteroid_chunk.png",product:"metallic-asteroid-chunk"},{icon:"https://wiki.factorio.com/images/thumb/Carbonic_asteroid_chunk.png/32px-Carbonic_asteroid_chunk.png",product:"carbonic-asteroid-chunk"},{icon:"https://wiki.factorio.com/images/thumb/Oxide_asteroid_chunk.png/32px-Oxide_asteroid_chunk.png",product:"oxide-asteroid-chunk"},{icon:"https://wiki.factorio.com/images/thumb/Promethium_asteroid_chunk.png/32px-Promethium_asteroid_chunk.png",product:"promethium-asteroid-chunk"},{icon:"https://wiki.factorio.com/images/thumb/Submachine_gun.png/32px-Submachine_gun.png",product:"submachine-gun"},{icon:"https://wiki.factorio.com/images/thumb/Railgun.png/32px-Railgun.png",product:"railgun"},{icon:"https://wiki.factorio.com/images/thumb/Tesla_gun.png/32px-Tesla_gun.png",product:"teslagun"},{icon:"https://wiki.factorio.com/images/thumb/Shotgun.png/32px-Shotgun.png",product:"shotgun"},{icon:"https://wiki.factorio.com/images/thumb/Combat_shotgun.png/32px-Combat_shotgun.png",product:"combat-shotgun"},{icon:"https://wiki.factorio.com/images/thumb/Rocket_launcher.png/32px-Rocket_launcher.png",product:"rocket-launcher"},{icon:"https://wiki.factorio.com/images/thumb/Flamethrower.png/32px-Flamethrower.png",product:"flamethrower"},{icon:"https://wiki.factorio.com/images/thumb/Firearm_magazine.png/32px-Firearm_magazine.png",product:"firearm-magazine"},{icon:"https://wiki.factorio.com/images/thumb/Piercing_rounds_magazine.png/32px-Piercing_rounds_magazine.png",product:"piercing-rounds-magazine"},{icon:"https://wiki.factorio.com/images/thumb/Uranium_rounds_magazine.png/32px-Uranium_rounds_magazine.png",product:"uranium-rounds-magazine"},{icon:"https://wiki.factorio.com/images/thumb/Shotgun_shells.png/32px-Shotgun_shells.png",product:"shotgun-shell"},{icon:"https://wiki.factorio.com/images/thumb/Piercing_shotgun_shells.png/32px-Piercing_shotgun_shells.png",product:"piercing-shotgun-shell"},{icon:"https://wiki.factorio.com/images/thumb/Cannon_shell.png/32px-Cannon_shell.png",product:"cannon-shell"},{icon:"https://wiki.factorio.com/images/thumb/Explosive_cannon_shell.png/32px-Explosive_cannon_shell.png",product:"explosive-cannon-shell"},{icon:"https://wiki.factorio.com/images/thumb/Uranium_cannon_shell.png/32px-Uranium_cannon_shell.png",product:"uranium-cannon-shell"},{icon:"https://wiki.factorio.com/images/thumb/Explosive_uranium_cannon_shell.png/32px-Explosive_uranium_cannon_shell.png",product:"explosive-uranium-cannon-shell"},{icon:"https://wiki.factorio.com/images/thumb/Artillery_shell.png/32px-Artillery_shell.png",product:"artillery-shell"},{icon:"https://wiki.factorio.com/images/thumb/Rocket.png/32px-Rocket.png",product:"rocket"},{icon:"https://wiki.factorio.com/images/thumb/Explosive_rocket.png/32px-Explosive_rocket.png",product:"explosive-rocket"},{icon:"https://wiki.factorio.com/images/thumb/Atomic_bomb.png/32px-Atomic_bomb.png",product:"atomic-bomb"},{icon:"https://wiki.factorio.com/images/thumb/Capture_bot_rocket.png/32px-Capture_bot_rocket.png",product:"capture-robot-rocket"},{icon:"https://wiki.factorio.com/images/thumb/Railgun_ammo.png/32px-Railgun_ammo.png",product:"railgun-ammo"},{icon:"https://wiki.factorio.com/images/thumb/Flamethrower_ammo.png/32px-Flamethrower_ammo.png",product:"flamethrower-ammo"},{icon:"https://wiki.factorio.com/images/thumb/Tesla_ammo.png/32px-Tesla_ammo.png",product:"tesla-ammo"},{icon:"https://wiki.factorio.com/images/thumb/Grenade.png/32px-Grenade.png",product:"grenade"},{icon:"https://wiki.factorio.com/images/thumb/Cluster_grenade.png/32px-Cluster_grenade.png",product:"cluster-grenade"},{icon:"https://wiki.factorio.com/images/thumb/Poison_capsule.png/32px-Poison_capsule.png",product:"poison-capsule"},{icon:"https://wiki.factorio.com/images/thumb/Slowdown_capsule.png/32px-Slowdown_capsule.png",product:"slowdown-capsule"},{icon:"https://wiki.factorio.com/images/thumb/Defender_capsule.png/32px-Defender_capsule.png",product:"defender-capsule"},{icon:"https://wiki.factorio.com/images/thumb/Distractor_capsule.png/32px-Distractor_capsule.png",product:"distractor-capsule"},{icon:"https://wiki.factorio.com/images/thumb/Destroyer_capsule.png/32px-Destroyer_capsule.png",product:"destroyer-capsule"},{icon:"https://wiki.factorio.com/images/thumb/Light_armor.png/32px-Light_armor.png",product:"light-armor"},{icon:"https://wiki.factorio.com/images/thumb/Heavy_armor.png/32px-Heavy_armor.png",product:"heavy-armor"},{icon:"https://wiki.factorio.com/images/thumb/Modular_armor.png/32px-Modular_armor.png",product:"modular-armor"},{icon:"https://wiki.factorio.com/images/thumb/Power_armor.png/32px-Power_armor.png",product:"power-armor"},{icon:"https://wiki.factorio.com/images/thumb/Power_armor_MK2.png/32px-Power_armor_MK2.png",product:"power-armor-mk2"},{icon:"https://wiki.factorio.com/images/thumb/Mech_armor.png/32px-Mech_armor.png",product:"mech-armor"},{icon:"https://wiki.factorio.com/images/thumb/Portable_solar_panel.png/32px-Portable_solar_panel.png",product:"solar-panel-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Portable_fission_reactor.png/32px-Portable_fission_reactor.png",product:"fission-reactor-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Portable_fusion_reactor.png/32px-Portable_fusion_reactor.png",product:"fusion-reactor-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Personal_battery.png/32px-Personal_battery.png",product:"battery-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Personal_battery_MK2.png/32px-Personal_battery_MK2.png",product:"battery-mk2-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Personal_battery_MK3.png/32px-Personal_battery_MK3.png",product:"battery-mk3-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Belt_immunity_equipment.png/32px-Belt_immunity_equipment.png",product:"belt-immunity-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Exoskeleton.png/32px-Exoskeleton.png",product:"exoskeleton-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Personal_roboport.png/32px-Personal_roboport.png",product:"personal-roboport-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Personal_roboport_MK2.png/32px-Personal_roboport_MK2.png",product:"personal-roboport-mk2-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Nightvision.png/32px-Nightvision.png",product:"night-vision-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Toolbelt_equipment.png/32px-Toolbelt_equipment.png",product:"toolbelt-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Energy_shield.png/32px-Energy_shield.png",product:"energy-shield-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Energy_shield_MK2.png/32px-Energy_shield_MK2.png",product:"energy-shield-mk2-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Personal_laser_defense.png/32px-Personal_laser_defense.png",product:"personal-laser-defense-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Discharge_defense.png/32px-Discharge_defense.png",product:"discharge-defense-equipment"},{icon:"https://wiki.factorio.com/images/thumb/Wall.png/32px-Wall.png",product:"stone-wall"},{icon:"https://wiki.factorio.com/images/thumb/Gate.png/32px-Gate.png",product:"gate"},{icon:"https://wiki.factorio.com/images/thumb/Radar.png/32px-Radar.png",product:"radar"},{icon:"https://wiki.factorio.com/images/thumb/Land_mine.png/32px-Land_mine.png",product:"land-mine"},{icon:"https://wiki.factorio.com/images/thumb/Gun_turret.png/32px-Gun_turret.png",product:"gun-turret"},{icon:"https://wiki.factorio.com/images/thumb/Laser_turret.png/32px-Laser_turret.png",product:"laser-turret"},{icon:"https://wiki.factorio.com/images/thumb/Flamethrower_turret.png/32px-Flamethrower_turret.png",product:"flamethrower-turret"},{icon:"https://wiki.factorio.com/images/thumb/Artillery_turret.png/32px-Artillery_turret.png",product:"artillery-turret"},{icon:"https://wiki.factorio.com/images/thumb/Rocket_turret.png/32px-Rocket_turret.png",product:"rocket-turret"},{icon:"https://wiki.factorio.com/images/thumb/Tesla_turret.png/32px-Tesla_turret.png",product:"tesla-turret"},{icon:"https://wiki.factorio.com/images/thumb/Railgun_turret.png/32px-Railgun_turret.png",product:"railgun-turret"}];
+
+  function adjustFontSize(elementId) {
+    const element = document.getElementById(elementId);
+    const contentLength = element.value.length;
+    let fontSize = 14;
+    if (contentLength > 5000) { fontSize = 10; } 
+    else if (contentLength > 2500) { fontSize = 11; } 
+    else if (contentLength > 1000) { fontSize = 12; } 
+    else if (contentLength > 500) { fontSize = 13; }
+    element.style.fontSize = `${fontSize}px`;
+  }
+  
+  function updateLineNumbers() {
+    const textareaContent = document.getElementById('jsonEditor').value;
+    const lineNumbers = document.getElementById('lineNumbers');
+    const lines = textareaContent.split('\n');
+    const count = lines.length;
+    
+    lineNumbers.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+      const lineNumberDiv = document.createElement('div');
+      lineNumberDiv.textContent = i;
+      lineNumbers.appendChild(lineNumberDiv);
+    }
+    
+    let calculatedHeight;
+    if (isJsonEditorExpanded) {
+        const minLines = 15;
+        const lineHeight = 18;
+        calculatedHeight = Math.max(minLines * lineHeight, count * lineHeight);
+    } else {
+        calculatedHeight = 245;
+    }
+    
+    document.getElementById('jsonDisplay').style.height = `${calculatedHeight}px`;
+    document.getElementById('jsonEditor').style.height = `${calculatedHeight}px`;
+    
+    document.getElementById('jsonDisplay').onscroll = function() {
+      lineNumbers.scrollTop = document.getElementById('jsonDisplay').scrollTop;
+    };
+    
+    document.getElementById('jsonEditor').onscroll = function() {
+      lineNumbers.scrollTop = document.getElementById('jsonEditor').scrollTop;
+    };
+  }
+  
+  function toggleEditorMode() {
+    isEditorMode = !isEditorMode;
+    const jsonDisplay = document.getElementById('jsonDisplay');
+    const jsonEditor = document.getElementById('jsonEditor');
+    if (isEditorMode) {
+      jsonDisplay.classList.add('editing');
+      jsonEditor.classList.add('editing');
+      jsonEditor.focus();
+    } else {
+      try {
+        const json = JSON.parse(jsonEditor.value);
+        const formattedJson = JSON.stringify(json, null, 2);
+        jsonEditor.value = formattedJson;
+        syntaxHighlightJson();
+      } catch (e) {
+        console.error("Error formatting JSON:", e);
+        return;
+      }
+      jsonDisplay.classList.remove('editing');
+      jsonEditor.classList.remove('editing');
+    }
+  }
+
+  function searchInJson() {
+    const searchTerm = document.getElementById('searchInput').value.trim();
+    if (!searchTerm) return;
+    currentMatches = [];
+    currentMatchIndex = -1;
+    const text = document.getElementById('jsonEditor').value;
+    try {
+      const regex = new RegExp(escapeRegExp(searchTerm), 'gi');
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        currentMatches.push({ start: match.index, end: match.index + searchTerm.length });
+      }
+      if (currentMatches.length > 0) {
+        findNextMatch();
+      } else {
+        alert('Совпадений не найдено!');
+      }
+    } catch (e) {
+      console.error("Error in searchInJson:", e);
+      alert('Ошибка при поиске: ' + e.message);
+    }
+  }
+  
+  function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function escapeHtml(unsafe) { return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+  
+  function findNextMatch() {
+    if (currentMatches.length === 0) return;
+    currentMatchIndex = (currentMatchIndex + 1) % currentMatches.length;
+    highlightCurrentMatch();
+  }
+  
+  function findPrevMatch() {
+    if (currentMatches.length === 0) return;
+    currentMatchIndex = (currentMatchIndex - 1 + currentMatches.length) % currentMatches.length;
+    highlightCurrentMatch();
+  }
+  
+  function highlightCurrentMatch() {
+    if (currentMatchIndex < 0 || currentMatches.length === 0) return;
+    const match = currentMatches[currentMatchIndex];
+    if (isEditorMode) {
+      const textarea = document.getElementById('jsonEditor');
+      textarea.focus();
+      textarea.setSelectionRange(match.start, match.end);
+      const text = textarea.value;
+      const beforeMatch = text.substring(0, match.start);
+      const linesBefore = beforeMatch.split('\n').length - 1;
+      const lineHeight = 20; 
+      const scrollPosition = linesBefore * lineHeight;
+      textarea.scrollTop = scrollPosition - textarea.clientHeight / 2;
+    } else {
+      syntaxHighlightJson(match);
+      const jsonDisplay = document.getElementById('jsonDisplay');
+      const highlightEl = jsonDisplay.querySelector('.highlight-match');
+      if (highlightEl) {
+        const offsetTop = highlightEl.offsetTop;
+        jsonDisplay.scrollTop = offsetTop - jsonDisplay.clientHeight / 2;
+      }
+    }
+  }
+
+  function syntaxHighlightJson(currentMatch = null) {
+    const jsonText = document.getElementById('jsonEditor').value;
+    const displayEl = document.getElementById('jsonDisplay');
+    if (!jsonText.trim()) {
+      displayEl.innerHTML = '';
+      return;
+    }
+    const jsonRegex = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[[\]{}]|,|:)/g;
+    let result = '';
+    let lastIndex = 0;
+    let match;
+    while ((match = jsonRegex.exec(jsonText)) !== null) {
+      const token = match[0];
+      const position = match.index;
+      if (position > lastIndex) {
+        result += jsonText.substring(lastIndex, position);
+      }
+      let spanClass = '';
+      let isSearchMatch = false;
+      if (currentMatch && currentMatch.start !== undefined && currentMatch.end !== undefined) {
+        if ((position <= currentMatch.start && position + token.length > currentMatch.start) || (position >= currentMatch.start && position < currentMatch.end)) {
+          isSearchMatch = true;
+        }
+      }
+      if (/^"/.test(token)) { spanClass = /:$/.test(token) ? 'json-key' : 'json-string'; } 
+      else if (/true|false/.test(token)) { spanClass = 'json-boolean'; } 
+      else if (/null/.test(token)) { spanClass = 'json-null'; } 
+      else if (/^-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?$/.test(token)) { spanClass = 'json-number'; } 
+      else if (/[[{}]/.test(token)) { spanClass = 'json-bracket'; } 
+      else if (token === ':') { spanClass = 'json-colon'; } 
+      else if (token === ',') { spanClass = 'json-comma'; }
+      let spanClass2 = isSearchMatch ? `${spanClass} highlight-match` : spanClass;
+      result += `<span class="${spanClass2}">${escapeHtml(token)}</span>`;
+      lastIndex = position + token.length;
+    }
+    if (lastIndex < jsonText.length) {
+      result += jsonText.substring(lastIndex);
+    }
+    displayEl.innerHTML = result;
+  }
+
+  function updateEncodedOutput(json) {
+    try {
+      const jsonString = JSON.stringify(json);
+      const compressed = pako.deflate(jsonString);
+      const base64 = btoa(String.fromCharCode.apply(null, compressed));
+      const encodedOutput = document.getElementById('encodedOutput');
+      encodedOutput.value = '0' + base64;
+      adjustFontSize('encodedOutput');
+    } catch (e) {
+      document.getElementById('encodedOutput').value = 'Encoding error: ' + e.message;
+    }
+  }
+  
+  function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+  }
+
+  function calculateGradient(startColorHex, endColorHex, steps) {
+      const startRgb = hexToRgb(startColorHex);
+      const endRgb = hexToRgb(endColorHex);
+      if (!startRgb || !endRgb) return [];
+      
+      const gradient = [];
+      for (let i = 0; i < steps; i++) {
+          const ratio = i / (steps - 1);
+          const r = Math.round(startRgb.r + (endRgb.r - startRgb.r) * ratio);
+          const g = Math.round(startRgb.g + (endRgb.g - startRgb.g) * ratio);
+          const b = Math.round(startRgb.b + (endRgb.b - startRgb.b) * ratio);
+          gradient.push(`${r},${g},${b}`);
+      }
+      return gradient;
+  }
+  
+  function updateGradientPreview(startColor, endColor) {
+      const preview = document.getElementById('gradient-preview');
+      preview.style.background = `linear-gradient(to right, ${startColor}, ${endColor})`;
+  }
+
+  function updateBlueprint() {
+      try {
+          const itemName = document.getElementById('itemSelector').value;
+          const startColor = document.getElementById('startColor').value;
+          const endColor = document.getElementById('endColor').value;
+          
+          updateItemImage(itemName);
+          updateGradientPreview(startColor, endColor);
+
+          const gradientColors = calculateGradient(startColor, endColor, 101); // 101 steps for 0-100%
+          
+          let newJson = JSON.parse(JSON.stringify(baseBlueprintJson)); // Deep copy
+          
+          // 1. Replace item name
+          let tempJsonString = JSON.stringify(newJson);
+          newJson = JSON.parse(tempJsonString.replace(/energy-shield-equipment/g, itemName));
+
+          // 2. Replace colors using the gradient
+          const parameters = newJson.blueprint.entities[0].control_behavior.parameters;
+          parameters.forEach(param => {
+              if (param.condition && typeof param.condition.constant !== 'undefined') {
+                  const percent = param.condition.constant;
+                  if (gradientColors[percent]) {
+                      const newColor = gradientColors[percent];
+                      param.text = param.text.replace(/(\[color=)[^\]]+(\])/, `$1${newColor}$2`);
+                  }
+              }
+          });
+
+          // 3. Update displays
+          const formattedJson = JSON.stringify(newJson, null, 2);
+          document.getElementById('jsonEditor').value = formattedJson;
+          
+          currentMatches = [];
+          currentMatchIndex = -1;
+          
+          syntaxHighlightJson();
+          updateLineNumbers();
+          updateEncodedOutput(newJson);
+          
+          if (isEditorMode) {
+            toggleEditorMode();
+          }
+      } catch(e) {
+          console.error('Blueprint generation error:', e);
+          alert('Случилась ошибка при генерации чертежа: ' + e.message);
+      }
+  }
+
+  function updateItemImage(itemName) {
+    const item = items.find(i => i.product === itemName);
+    const imgElement = document.getElementById('selected-item-icon');
+    if (item && item.icon) {
+        imgElement.src = item.icon;
+        imgElement.style.display = 'block';
+    } else {
+        imgElement.src = '';
+        imgElement.style.display = 'none';
+    }
+  }
+
+  function populateItemSelector() {
+      const selector = document.getElementById('itemSelector');
+      items.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.product;
+          option.textContent = item.product.replace(/-/g, ' ');
+          selector.appendChild(option);
+      });
+  }
+
+  function toggleJsonEditorSize() {
+      isJsonEditorExpanded = !isJsonEditorExpanded;
+      const button = document.getElementById('toggle-json-editor-size');
+      button.textContent = isJsonEditorExpanded ? 'Свернуть' : 'Развернуть';
+      updateLineNumbers();
+  }
+
+  function encodeJson() {
+    try {
+      const jsonText = document.getElementById('jsonEditor').value;
+      const json = JSON.parse(jsonText);
+      updateEncodedOutput(json);
+      if (isEditorMode) {
+        const formattedJson = JSON.stringify(json, null, 2);
+        document.getElementById('jsonEditor').value = formattedJson;
+      }
+    } catch (e) {
+      alert('Error encoding: ' + e.message);
+    }
+  }
+
+  function copyEncodedBlueprint() {
+    const encodedField = document.getElementById('encodedOutput');
+    encodedField.select();
+    document.execCommand('copy');
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Скопировано!';
+    setTimeout(() => {
+      button.textContent = originalText;
+    }, 1500);
+  }
+  
+  window.onload = function() {
+    populateItemSelector();
+    
+    // Setup listeners
+    document.getElementById('itemSelector').addEventListener('change', updateBlueprint);
+    document.getElementById('startColor').addEventListener('input', updateBlueprint);
+    document.getElementById('endColor').addEventListener('input', updateBlueprint);
+
+    document.getElementById('jsonEditor').addEventListener('input', updateLineNumbers);
+    
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') searchInJson();
+    });
+    
+    document.getElementById('jsonDisplay').addEventListener('click', function() {
+      if (!isEditorMode) toggleEditorMode();
+    });
+    
+    document.getElementById('jsonEditor').addEventListener('blur', function() {
+      if (isEditorMode) toggleEditorMode();
+    });
+    
+    // Initial blueprint generation
+    updateBlueprint();
+  };
+</script>
+</body>
+</html>
