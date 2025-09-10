@@ -27,7 +27,7 @@ const baseBlueprintJson18 = { "blueprint": { "description": "[item-group=other]�
   
 const blueprintTemplates = [
     { name: "ㅤВариант 1: Стандарт ", data: JSON.parse(JSON.stringify(baseBlueprintJson1))},
-    { name: "ㅤВариант 2: Короткий", data: JSON.parse(JSON.stringify(baseBlueprintJson2))},
+    { name: "ㅤВариант 2: Лесенка", data: JSON.parse(JSON.stringify(baseBlueprintJson2))},
     { name: "ㅤВариант 3: Квадратно половинчастый", data: JSON.parse(JSON.stringify(baseBlueprintJson3))},
     { name: "Вариант 3 (короткий)", data: JSON.parse(JSON.stringify(baseBlueprintJson4))},
     { name: "ㅤВариант 4: Квадрат линии", data: JSON.parse(JSON.stringify(baseBlueprintJson5))},
